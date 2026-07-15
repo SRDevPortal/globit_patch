@@ -1,0 +1,30 @@
+{
+ "actions": [],
+ "autoname": "field:external_key",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": ["external_key", "source_site", "source_doctype", "source_name", "destination_doctype", "destination_name", "last_source_modified", "last_payload_hash"],
+ "fields": [
+  {"fieldname": "external_key", "fieldtype": "Data", "label": "External Key", "read_only": 1, "reqd": 1, "unique": 1},
+  {"fieldname": "source_site", "fieldtype": "Data", "in_list_view": 1, "label": "Source Site", "reqd": 1},
+  {"fieldname": "source_doctype", "fieldtype": "Data", "in_list_view": 1, "label": "Source DocType", "reqd": 1},
+  {"fieldname": "source_name", "fieldtype": "Data", "in_list_view": 1, "label": "Source Name", "reqd": 1},
+  {"fieldname": "destination_doctype", "fieldtype": "Link", "in_list_view": 1, "label": "Destination DocType", "options": "DocType", "reqd": 1},
+  {"fieldname": "destination_name", "fieldtype": "Dynamic Link", "in_list_view": 1, "label": "Destination Name", "options": "destination_doctype", "reqd": 1},
+  {"fieldname": "last_source_modified", "fieldtype": "Datetime", "label": "Last Source Modified"},
+  {"fieldname": "last_payload_hash", "fieldtype": "Data", "label": "Last Payload Hash"}
+ ],
+ "links": [],
+ "modified": "2026-07-15 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Globit Patch",
+ "name": "External Record Mapping",
+ "owner": "Administrator",
+ "permissions": [
+  {"create": 1, "delete": 1, "read": 1, "report": 1, "role": "System Manager", "write": 1}
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}

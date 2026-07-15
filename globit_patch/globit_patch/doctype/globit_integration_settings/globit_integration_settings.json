@@ -1,0 +1,125 @@
+{
+ "actions": [],
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "enabled",
+  "dry_run",
+  "allowed_source_site",
+  "allowed_schema_versions",
+  "default_encounter_place",
+  "security_section",
+  "signing_secret",
+  "signature_tolerance_seconds",
+  "maximum_payload_bytes",
+  "matching_section",
+  "allow_automatic_patient_matching",
+  "log_retention_days",
+  "configuration_initialized"
+ ],
+ "fields": [
+  {
+   "default": "0",
+   "fieldname": "enabled",
+   "fieldtype": "Check",
+   "label": "Enabled"
+  },
+  {
+   "default": "1",
+   "fieldname": "dry_run",
+   "fieldtype": "Check",
+   "label": "Dry Run"
+  },
+  {
+   "default": "eternityerp.m.frappe.cloud",
+   "description": "One trusted source hostname per line. Comma-separated values are normalized on save.",
+   "fieldname": "allowed_source_site",
+   "fieldtype": "Small Text",
+   "label": "Allowed Source Sites",
+   "reqd": 1
+  },
+  {
+   "default": "1",
+   "description": "One supported integer schema version per line.",
+   "fieldname": "allowed_schema_versions",
+   "fieldtype": "Small Text",
+   "label": "Allowed Schema Versions",
+   "reqd": 1
+  },
+  {
+   "default": "OPD",
+   "fieldname": "default_encounter_place",
+   "fieldtype": "Link",
+   "label": "Default Encounter Place",
+   "options": "SR Encounter Place",
+   "reqd": 1
+  },
+  {
+   "fieldname": "security_section",
+   "fieldtype": "Section Break",
+   "label": "Security"
+  },
+  {
+   "description": "Shared HMAC secret used to sign n8n requests. site_config globit_sync_signing_secret takes precedence.",
+   "fieldname": "signing_secret",
+   "fieldtype": "Password",
+   "label": "Signing Secret"
+  },
+  {
+   "default": "300",
+   "fieldname": "signature_tolerance_seconds",
+   "fieldtype": "Int",
+   "label": "Signature Tolerance (seconds)"
+  },
+  {
+   "default": "1048576",
+   "fieldname": "maximum_payload_bytes",
+   "fieldtype": "Int",
+   "label": "Maximum Payload Size (bytes)"
+  },
+  {
+   "fieldname": "matching_section",
+   "fieldtype": "Section Break",
+   "label": "Patient Matching"
+  },
+  {
+   "default": "1",
+   "description": "Allow verified Contact, Customer, or Patient matches when no external mapping exists.",
+   "fieldname": "allow_automatic_patient_matching",
+   "fieldtype": "Check",
+   "label": "Allow Automatic Patient Matching"
+  },
+  {
+   "default": "30",
+   "fieldname": "log_retention_days",
+   "fieldtype": "Int",
+   "label": "Sync Log Retention (days)"
+  },
+  {
+   "default": "0",
+   "fieldname": "configuration_initialized",
+   "fieldtype": "Check",
+   "hidden": 1,
+   "label": "Configuration Initialized",
+   "read_only": 1
+  }
+ ],
+ "issingle": 1,
+ "links": [],
+ "modified": "2026-07-15 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Globit Patch",
+ "name": "Globit Integration Settings",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "read": 1,
+   "role": "System Manager",
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

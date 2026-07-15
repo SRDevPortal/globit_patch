@@ -67,3 +67,7 @@ yarn-error.log*
 tmp/
 temp/
 *.tmp
+
+# Python cache
+__pycache__/
+*.py[cod]

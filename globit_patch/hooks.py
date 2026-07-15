@@ -18,6 +18,10 @@ override_whitelisted_methods = {
 	),
 }
 
+scheduler_events = {
+	"daily": ["globit_patch.integrations.globifit.jobs.cleanup_sync_logs"],
+}
+
 # Apps
 # ------------------
 

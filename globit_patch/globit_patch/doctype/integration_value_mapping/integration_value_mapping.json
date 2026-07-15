@@ -1,0 +1,28 @@
+{
+ "actions": [],
+ "autoname": "field:mapping_key",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": ["enabled", "source_doctype", "source_value", "destination_doctype", "destination_value", "mapping_key"],
+ "fields": [
+  {"default": "1", "fieldname": "enabled", "fieldtype": "Check", "in_list_view": 1, "label": "Enabled"},
+  {"fieldname": "source_doctype", "fieldtype": "Data", "in_list_view": 1, "label": "Source DocType", "reqd": 1},
+  {"fieldname": "source_value", "fieldtype": "Data", "in_list_view": 1, "label": "Source Value", "reqd": 1},
+  {"fieldname": "destination_doctype", "fieldtype": "Link", "in_list_view": 1, "label": "Destination DocType", "options": "DocType", "reqd": 1},
+  {"fieldname": "destination_value", "fieldtype": "Dynamic Link", "in_list_view": 1, "label": "Destination Value", "options": "destination_doctype", "reqd": 1},
+  {"fieldname": "mapping_key", "fieldtype": "Data", "hidden": 1, "label": "Mapping Key", "read_only": 1, "unique": 1}
+ ],
+ "links": [],
+ "modified": "2026-07-15 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Globit Patch",
+ "name": "Integration Value Mapping",
+ "owner": "Administrator",
+ "permissions": [
+  {"create": 1, "delete": 1, "read": 1, "report": 1, "role": "System Manager", "write": 1}
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}

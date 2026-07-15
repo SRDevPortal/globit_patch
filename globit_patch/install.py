@@ -13,6 +13,10 @@ PATIENT_ENCOUNTER_FIELDS = {
 			"fieldtype": "Data",
 			"insert_after": "company",
 			"module": "Globit Patch",
+			"description": "Source site identifier for synchronized encounters.",
+			"in_standard_filter": 1,
+			"no_copy": 1,
+			"read_only": 1,
 		},
 		{
 			"fieldname": "doc_id",
@@ -20,6 +24,10 @@ PATIENT_ENCOUNTER_FIELDS = {
 			"fieldtype": "Data",
 			"insert_after": "channel_id",
 			"module": "Globit Patch",
+			"description": "Patient Encounter name on the source site.",
+			"in_standard_filter": 1,
+			"no_copy": 1,
+			"read_only": 1,
 		},
 	]
 }
@@ -36,8 +44,43 @@ REQUIRED_CONSOLE_PARAMETERS = {
 
 
 def setup_integrations():
+	setup_integration_role()
+	setup_integration_settings()
 	setup_patient_encounter_fields()
 	setup_vobiz_patient_encounter_queue()
+
+
+def setup_integration_role():
+	"""Create the least-privilege role required by the destination sync API."""
+	if not frappe.db.exists("Role", "Globit Integration User"):
+		frappe.get_doc(
+			{
+				"doctype": "Role",
+				"role_name": "Globit Integration User",
+				"desk_access": 0,
+				"is_custom": 0,
+			}
+		).insert(ignore_permissions=True)
+
+
+def setup_integration_settings():
+	"""Seed fail-closed integration defaults exactly once after model sync."""
+	if not frappe.db.exists("DocType", "Globit Integration Settings"):
+		return
+	settings = frappe.get_single("Globit Integration Settings")
+	if settings.configuration_initialized:
+		return
+	settings.enabled = 0
+	settings.dry_run = 1
+	settings.allowed_source_site = "eternityerp.m.frappe.cloud"
+	settings.allowed_schema_versions = "1"
+	settings.default_encounter_place = "OPD"
+	settings.signature_tolerance_seconds = 300
+	settings.maximum_payload_bytes = 1048576
+	settings.allow_automatic_patient_matching = 1
+	settings.log_retention_days = 30
+	settings.configuration_initialized = 1
+	settings.save(ignore_permissions=True)
 
 
 def setup_patient_encounter_fields():

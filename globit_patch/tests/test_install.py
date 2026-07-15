@@ -27,11 +27,46 @@ class TestHooks(unittest.TestCase):
 class TestInstall(unittest.TestCase):
 	@patch("globit_patch.install.setup_vobiz_patient_encounter_queue")
 	@patch("globit_patch.install.setup_patient_encounter_fields")
-	def test_setup_integrations_runs_both_steps(self, setup_fields, setup_queue):
+	@patch("globit_patch.install.setup_integration_settings")
+	@patch("globit_patch.install.setup_integration_role")
+	def test_setup_integrations_runs_all_steps(self, setup_role, setup_settings, setup_fields, setup_queue):
 		install.setup_integrations()
 
+		setup_role.assert_called_once_with()
+		setup_settings.assert_called_once_with()
 		setup_fields.assert_called_once_with()
 		setup_queue.assert_called_once_with()
+
+	@patch("globit_patch.install.frappe")
+	def test_setup_integration_role_creates_missing_role(self, frappe):
+		frappe.db.exists.return_value = False
+		doc = frappe.get_doc.return_value
+
+		install.setup_integration_role()
+
+		frappe.get_doc.assert_called_once_with(
+			{
+				"doctype": "Role",
+				"role_name": "Globit Integration User",
+				"desk_access": 0,
+				"is_custom": 0,
+			}
+		)
+		doc.insert.assert_called_once_with(ignore_permissions=True)
+
+	@patch("globit_patch.install.frappe")
+	def test_setup_integration_settings_seeds_fail_closed_defaults(self, frappe):
+		frappe.db.exists.return_value = True
+		settings = MagicMock(configuration_initialized=0)
+		frappe.get_single.return_value = settings
+
+		install.setup_integration_settings()
+
+		self.assertEqual(settings.enabled, 0)
+		self.assertEqual(settings.dry_run, 1)
+		self.assertEqual(settings.allowed_source_site, "eternityerp.m.frappe.cloud")
+		self.assertEqual(settings.configuration_initialized, 1)
+		settings.save.assert_called_once_with(ignore_permissions=True)
 
 	@patch("globit_patch.install.create_custom_fields")
 	def test_patient_encounter_fields_are_updated(self, create_custom_fields):
