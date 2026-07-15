@@ -12,10 +12,6 @@ required_apps = ["healthcare", "vobiz_click_to_call"]
 after_install = "globit_patch.install.setup_integrations"
 after_migrate = "globit_patch.install.setup_integrations"
 
-override_doctype_class = {
-	"Vobiz User Mapping": "globit_patch.overrides.vobiz_user_mapping.GlobitVobizUserMapping",
-}
-
 override_whitelisted_methods = {
 	"vobiz_click_to_call.api.console.get_agent_console_data": (
 		"globit_patch.api.vobiz_console.get_agent_console_data"
