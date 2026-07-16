@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import unittest
 from unittest.mock import MagicMock, patch
 
@@ -26,15 +27,21 @@ class TestHooks(unittest.TestCase):
 
 class TestInstall(unittest.TestCase):
 	@patch("globit_patch.install.setup_vobiz_patient_encounter_queue")
+	@patch("globit_patch.install.position_patient_company_id")
+	@patch("globit_patch.install.migrate_patient_encounter_identifiers")
 	@patch("globit_patch.install.setup_patient_encounter_fields")
 	@patch("globit_patch.install.setup_integration_settings")
 	@patch("globit_patch.install.setup_integration_role")
-	def test_setup_integrations_runs_all_steps(self, setup_role, setup_settings, setup_fields, setup_queue):
+	def test_setup_integrations_runs_all_steps(
+		self, setup_role, setup_settings, setup_fields, migrate_fields, position_field, setup_queue
+	):
 		install.setup_integrations()
 
 		setup_role.assert_called_once_with()
 		setup_settings.assert_called_once_with()
 		setup_fields.assert_called_once_with()
+		migrate_fields.assert_called_once_with()
+		position_field.assert_called_once_with()
 		setup_queue.assert_called_once_with()
 
 	@patch("globit_patch.install.frappe")
@@ -73,6 +80,66 @@ class TestInstall(unittest.TestCase):
 		install.setup_patient_encounter_fields()
 
 		create_custom_fields.assert_called_once_with(install.PATIENT_ENCOUNTER_FIELDS, update=True)
+
+	def test_patient_and_encounter_integration_field_labels(self):
+		patient_fields = {
+			field["fieldname"]: field for field in install.PATIENT_ENCOUNTER_FIELDS["Patient"]
+		}
+		encounter_fields = {
+			field["fieldname"]: field
+			for field in install.PATIENT_ENCOUNTER_FIELDS["Patient Encounter"]
+		}
+
+		self.assertEqual(patient_fields["company_id"]["label"], "Company ID")
+		self.assertEqual(patient_fields["company_id"]["insert_after"], "created_by_agent")
+		self.assertEqual(encounter_fields["company_id"]["label"], "Company ID")
+		self.assertEqual(encounter_fields["reference_id"]["label"], "Reference ID")
+		self.assertNotIn("channel_id", encounter_fields)
+		self.assertNotIn("doc_id", encounter_fields)
+
+	@patch("globit_patch.install.frappe")
+	def test_legacy_encounter_identifiers_are_copied_and_removed(self, frappe):
+		frappe.db.has_column.return_value = True
+		frappe.db.exists.return_value = True
+
+		install.migrate_patient_encounter_identifiers()
+
+		self.assertEqual(frappe.db.sql.call_count, 2)
+		self.assertEqual(frappe.delete_doc.call_count, 2)
+		frappe.delete_doc.assert_any_call(
+			"Custom Field",
+			"Patient Encounter-channel_id",
+			force=True,
+			ignore_permissions=True,
+			ignore_missing=True,
+		)
+		frappe.delete_doc.assert_any_call(
+			"Custom Field",
+			"Patient Encounter-doc_id",
+			force=True,
+			ignore_permissions=True,
+			ignore_missing=True,
+		)
+		frappe.clear_cache.assert_called_once_with(doctype="Patient Encounter")
+
+	@patch("globit_patch.install.frappe")
+	def test_patient_company_id_is_positioned_after_created_by(self, frappe):
+		frappe.get_meta.return_value.fields = [
+			MagicMock(fieldname="first_name"),
+			MagicMock(fieldname="created_by_agent"),
+			MagicMock(fieldname="customer"),
+			MagicMock(fieldname="company_id"),
+		]
+		frappe.db.get_value.return_value = "Patient-main-field_order"
+
+		install.position_patient_company_id()
+
+		value = frappe.db.set_value.call_args.args[3]
+		self.assertEqual(
+			json.loads(value),
+			["first_name", "created_by_agent", "company_id", "customer"],
+		)
+		frappe.clear_cache.assert_called_once_with(doctype="Patient")
 
 	@patch("globit_patch.install.remove_legacy_queue_source_property_setter")
 	@patch("globit_patch.install.validate_vobiz_capabilities")

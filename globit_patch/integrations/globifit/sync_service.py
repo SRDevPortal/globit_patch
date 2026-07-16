@@ -171,6 +171,7 @@ def _sync_patient(payload: SyncPayload, settings: Any) -> tuple[Any, str, Patien
 		patient_action = "matched_existing" if resolution.method != "External Mapping" else "unchanged"
 		if resolution.method == "External Mapping":
 			desired = {
+				"company_id": payload.source_site,
 				"first_name": str(encounter.get("patient_name") or "").strip(),
 				"sex": sex,
 				"mobile": normalize_mobile(encounter.get("sr_pe_mobile")),
@@ -186,6 +187,7 @@ def _sync_patient(payload: SyncPayload, settings: Any) -> tuple[Any, str, Patien
 		patient = frappe.get_doc(
 			{
 				"doctype": "Patient",
+				"company_id": payload.source_site,
 				"first_name": str(encounter.get("patient_name") or "").strip(),
 				"sex": sex,
 				"mobile": normalize_mobile(encounter.get("sr_pe_mobile")),
@@ -268,7 +270,7 @@ def _sync_encounter(payload: SyncPayload, settings: Any, patient: Any) -> tuple[
 	else:
 		existing_name = frappe.db.get_value(
 			"Patient Encounter",
-			{"channel_id": payload.source_site, "doc_id": payload.source_name},
+			{"company_id": payload.source_site, "reference_id": payload.source_name},
 			"name",
 		)
 		doc = frappe.get_doc("Patient Encounter", existing_name) if existing_name else frappe.new_doc("Patient Encounter")
@@ -330,8 +332,8 @@ def _encounter_values(payload: SyncPayload, settings: Any, patient: Any) -> dict
 		required=True,
 	)
 	return {
-		"channel_id": payload.source_site,
-		"doc_id": payload.source_name,
+		"company_id": payload.source_site,
+		"reference_id": payload.source_name,
 		"patient": patient.name,
 		"patient_name": patient.patient_name or patient.first_name,
 		"company": resolve_link("Company", source.get("company"), "Company", required=True),

@@ -15,11 +15,40 @@ from globit_patch.integrations.globifit.sync_service import (
 	_mapped_replay,
 	_save_patient,
 	_sync_encounter,
+	_sync_patient,
 )
 from globit_patch.tests.test_sync_contract import valid_payload
 
 
 class TestSyncService(unittest.TestCase):
+	@patch("globit_patch.integrations.globifit.sync_service.save_external_mapping")
+	@patch("globit_patch.integrations.globifit.sync_service.resolve_patient")
+	@patch("globit_patch.integrations.globifit.sync_service.resolve_link")
+	@patch("globit_patch.integrations.globifit.sync_service.frappe")
+	def test_created_patient_receives_source_company_id(
+		self, frappe, resolve_link, resolve_patient, save_mapping
+	):
+		payload = parse_payload(
+			valid_payload(),
+			allowed_source_site="eternityerp.m.frappe.cloud",
+			allowed_versions={1},
+		)
+		patient = SimpleNamespace(name="PAT-TARGET-1", insert=lambda **_kwargs: None)
+		frappe.get_doc.return_value = patient
+		resolve_link.side_effect = ["Female", "General"]
+		resolve_patient.return_value = PatientResolution(None, "Created")
+
+		result, action, _resolution, changes = _sync_patient(
+			payload,
+			SimpleNamespace(allow_automatic_patient_matching=True),
+		)
+
+		self.assertIs(result, patient)
+		self.assertEqual(action, "created")
+		self.assertEqual(changes, {"fields": {}, "child_tables": {}})
+		self.assertEqual(frappe.get_doc.call_args.args[0]["company_id"], payload.source_site)
+		save_mapping.assert_called_once()
+
 	@patch("globit_patch.integrations.globifit.sync_service.save_external_mapping")
 	@patch("globit_patch.integrations.globifit.sync_service._encounter_values")
 	@patch("globit_patch.integrations.globifit.sync_service.get_external_mapping")

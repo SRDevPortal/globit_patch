@@ -4,7 +4,7 @@ Frappe integration app for Globit's Patient Encounter workflow.
 
 The app currently:
 
-- creates the `channel_id` and `doc_id` custom fields on Patient Encounter;
+- creates Patient and Patient Encounter `company_id` identifiers plus the Encounter `reference_id`;
 - ensures Patient Encounter is included in Vobiz Settings > Allowed DocTypes; and
 - relies on `vobiz_click_to_call` for its native Patient Encounter queue and user-mapping support;
 - filters the native Patient Encounter console queue through Frappe read permissions and

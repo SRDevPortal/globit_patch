@@ -1,15 +1,30 @@
 import inspect
+import json
 
 import frappe
 from frappe import _
 from frappe.custom.doctype.custom_field.custom_field import create_custom_fields
+from frappe.custom.doctype.property_setter.property_setter import make_property_setter
 
 
 PATIENT_ENCOUNTER_FIELDS = {
+	"Patient": [
+		{
+			"fieldname": "company_id",
+			"label": "Company ID",
+			"fieldtype": "Data",
+			"insert_after": "created_by_agent",
+			"module": "Globit Patch",
+			"description": "Source site identifier for synchronized patients.",
+			"in_standard_filter": 1,
+			"no_copy": 1,
+			"read_only": 1,
+		},
+	],
 	"Patient Encounter": [
 		{
-			"fieldname": "channel_id",
-			"label": "Channel ID",
+			"fieldname": "company_id",
+			"label": "Company ID",
 			"fieldtype": "Data",
 			"insert_after": "company",
 			"module": "Globit Patch",
@@ -19,10 +34,10 @@ PATIENT_ENCOUNTER_FIELDS = {
 			"read_only": 1,
 		},
 		{
-			"fieldname": "doc_id",
-			"label": "Doc ID",
+			"fieldname": "reference_id",
+			"label": "Reference ID",
 			"fieldtype": "Data",
-			"insert_after": "channel_id",
+			"insert_after": "company_id",
 			"module": "Globit Patch",
 			"description": "Patient Encounter name on the source site.",
 			"in_standard_filter": 1,
@@ -47,6 +62,8 @@ def setup_integrations():
 	setup_integration_role()
 	setup_integration_settings()
 	setup_patient_encounter_fields()
+	migrate_patient_encounter_identifiers()
+	position_patient_company_id()
 	setup_vobiz_patient_encounter_queue()
 
 
@@ -84,8 +101,62 @@ def setup_integration_settings():
 
 
 def setup_patient_encounter_fields():
-	"""Create or update the webhook identifiers on Patient Encounter."""
+	"""Create or update the Patient synchronization identifiers."""
 	create_custom_fields(PATIENT_ENCOUNTER_FIELDS, update=True)
+
+
+def migrate_patient_encounter_identifiers():
+	"""Copy legacy identifiers and retire their old Custom Field definitions."""
+	for old_fieldname, new_fieldname in (
+		("channel_id", "company_id"),
+		("doc_id", "reference_id"),
+	):
+		if frappe.db.has_column("Patient Encounter", old_fieldname) and frappe.db.has_column(
+			"Patient Encounter", new_fieldname
+		):
+			frappe.db.sql(
+				f"""UPDATE `tabPatient Encounter`
+				SET `{new_fieldname}` = `{old_fieldname}`
+				WHERE IFNULL(`{new_fieldname}`, '') = ''
+				AND IFNULL(`{old_fieldname}`, '') != ''"""
+			)
+		legacy_field = f"Patient Encounter-{old_fieldname}"
+		if frappe.db.exists("Custom Field", legacy_field):
+			frappe.delete_doc(
+				"Custom Field",
+				legacy_field,
+				force=True,
+				ignore_permissions=True,
+				ignore_missing=True,
+			)
+	frappe.clear_cache(doctype="Patient Encounter")
+
+
+def position_patient_company_id():
+	"""Place Company ID directly after Created By in the customized Patient layout."""
+	field_order = [field.fieldname for field in frappe.get_meta("Patient", cached=False).fields]
+	if "company_id" not in field_order or "created_by_agent" not in field_order:
+		return
+	field_order.remove("company_id")
+	field_order.insert(field_order.index("created_by_agent") + 1, "company_id")
+	value = json.dumps(field_order)
+	setter = frappe.db.get_value(
+		"Property Setter",
+		{"doc_type": "Patient", "property": "field_order", "doctype_or_field": "DocType"},
+		"name",
+	)
+	if setter:
+		frappe.db.set_value("Property Setter", setter, "value", value, update_modified=False)
+	else:
+		make_property_setter(
+			"Patient",
+			"Patient",
+			"field_order",
+			value,
+			"Text",
+			for_doctype=True,
+		)
+	frappe.clear_cache(doctype="Patient")
 
 
 def setup_vobiz_patient_encounter_queue():
