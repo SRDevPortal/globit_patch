@@ -19,14 +19,15 @@ def get_agent_console_data(
 	filters: str | list | None = None,
 	**kwargs: Any,
 ) -> dict[str, Any]:
-	"""Return native Vobiz console data with Patient Encounter access enforced.
+	"""Return native Vobiz console data with encounter access enforced.
 
-	All console behavior and response fields remain owned by Vobiz. Globit Patch
-	only removes encounter rows the current user cannot read or does not own.
-	Unknown keyword arguments are forwarded to keep the wrapper compatible with
-	future additive changes to the upstream endpoint.
+	Frappe filters request arguments against the upstream function signature.
+	Globit Patch then removes encounter rows the user cannot access.
 	"""
-	data = get_vobiz_console_data(
+	kwargs.pop("cmd", None)
+
+	data = frappe.call(
+		get_vobiz_console_data,
 		limit=limit,
 		search=search,
 		followup_day=followup_day,
@@ -35,6 +36,7 @@ def get_agent_console_data(
 		filters=filters,
 		**kwargs,
 	)
+
 	if (data.get("queue_meta") or {}).get("doctype") != PATIENT_ENCOUNTER:
 		return data
 
