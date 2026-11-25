@@ -205,31 +205,28 @@ def remove_legacy_queue_source_property_setter():
 
 
 def validate_vobiz_capabilities():
-	"""Fail setup with an actionable error when the Vobiz contract is incompatible."""
+	"""Fail setup when Vobiz's console or queue capabilities are incompatible."""
 	from vobiz_click_to_call.api.console import get_agent_console_data
+	from vobiz_click_to_call.services.queue_sources import QUEUE_SOURCES
 
 	parameters = set(inspect.signature(get_agent_console_data).parameters)
 	missing_parameters = sorted(REQUIRED_CONSOLE_PARAMETERS - parameters)
-	queue_source = frappe.get_meta("Vobiz User Mapping").get_field("queue_source")
-	queue_sources = set()
-	if queue_source:
-		queue_sources = {
-			row.strip()
-			for row in (queue_source.options or "").splitlines()
-			if row.strip()
-		}
 
 	problems = []
+
 	if missing_parameters:
 		problems.append(
-			_("console API is missing parameters: {0}").format(", ".join(missing_parameters))
+			_("console API is missing parameters: {0}").format(
+				", ".join(missing_parameters)
+			)
 		)
-	if "Patient Encounter" not in queue_sources:
+
+	if "Patient Encounter" not in QUEUE_SOURCES:
 		problems.append(_("Patient Encounter is not a native Queue Source"))
 
 	if problems:
 		frappe.throw(
-			_("Upgrade Vobiz Click To Call before installing or migrating Globit Patch: {0}.").format(
+			_("Vobiz Click To Call is incompatible with Globit Patch: {0}.").format(
 				"; ".join(problems)
 			),
 			title=_("Incompatible Vobiz Click To Call"),
